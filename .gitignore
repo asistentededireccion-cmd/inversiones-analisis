@@ -1,0 +1,14 @@
+# temporales del editor / proceso
+._*
+*.log
+.DS_Store
+Thumbs.db
+
+# dependencias
+node_modules/
+
+# entornos / secretos (nunca commitear)
+.env
+.env.*
+*.pem
+.mcp.json

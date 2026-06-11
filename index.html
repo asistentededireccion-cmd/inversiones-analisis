@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Portal de Inversor — Montagne</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <style>
+    :root{
+      --dark:#1f3d4d; --primary:#37657e; --bg:#f8fafc; --card:#fff; --border:#e2e8f0;
+      --ink:#1e293b; --muted:#64748b; --faint:#94a3b8; --pos:#16a34a; --neg:#dc2626;
+      --warn-bg:#fffbeb; --warn-ink:#92400e; --good-bg:#f0fdf4;
+    }
+    *{box-sizing:border-box}
+    body{font-family:'Outfit',sans-serif;margin:0;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--ink)}
+    a{color:inherit}
+    .wrap{max-width:1280px;width:100%;margin:0 auto;padding:0 24px}
+
+    header{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+    .brandrow{display:flex;align-items:center;height:64px;gap:10px}
+    .logo{background:var(--primary);color:#fff;width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px}
+    .brand-t{font-size:1.1rem;font-weight:600;color:var(--dark);line-height:1.1}
+    .brand-s{font-size:.66rem;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--faint)}
+    .updated{margin-left:auto;font-size:.72rem;color:var(--faint);text-align:right}
+
+    nav.tabs{position:sticky;top:64px;z-index:39;background:var(--dark);overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+    nav.tabs .inner{display:flex;max-width:1280px;margin:0 auto;padding:0 12px}
+    nav.tabs button{background:none;border:none;color:rgba(255,255,255,.7);font-family:inherit;font-size:.8rem;font-weight:500;padding:13px 16px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+    nav.tabs button:hover{color:#fff}
+    nav.tabs button.active{color:#fff;border-bottom-color:#5e9bbd;font-weight:600}
+
+    main{flex:1;width:100%;max-width:1280px;margin:0 auto;padding:24px}
+    .tab-page{display:none}
+    .tab-page.active{display:block}
+
+    .card{background:var(--card);border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.07);border:1px solid var(--border);overflow:hidden;margin-bottom:22px}
+    .card-h{background:var(--dark);color:#fff;padding:13px 22px}
+    .card-h.teal{background:var(--primary)}
+    .card-h h2{font-size:1.02rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin:0}
+    .card-h p{font-size:.68rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin:2px 0 0;color:rgba(255,255,255,.72)}
+    .card-foot{border-top:1px solid var(--border);padding:9px 16px;font-size:.64rem;color:var(--faint);text-align:right}
+
+    .chips{display:flex;flex-wrap:wrap;gap:10px 20px;padding:13px 18px;background:var(--bg);border-bottom:1px solid var(--border);font-size:.8rem}
+    .chips .lbl{color:var(--muted)}
+    .chips b{font-weight:600}
+
+    .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 16px;background:var(--bg);border-bottom:1px solid var(--border);font-size:.8rem}
+    .seg{display:inline-flex;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden}
+    .seg button{padding:5px 14px;font-size:.75rem;border:none;cursor:pointer;font-family:inherit;background:#fff;color:#475569;border-left:1px solid #cbd5e1}
+    .seg button:first-child{border-left:none}
+    .seg button.on{background:var(--primary);color:#fff}
+    .lblcap{font-size:.7rem;font-weight:600;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+    .numbox{display:inline-flex;align-items:center;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;background:#fff}
+    .numbox input{border:none;padding:5px 8px;font-size:.75rem;width:62px;text-align:right;color:var(--ink);font-family:inherit}
+    .numbox span{padding:0 8px 0 0;font-size:.75rem;color:var(--faint)}
+    .search{border:1px solid #cbd5e1;border-radius:6px;padding:6px 10px;font-size:.8rem;background:#fff;color:#334155;min-width:170px;font-family:inherit;margin-left:auto}
+
+    table{width:100%;border-collapse:collapse;font-size:.78rem}
+    thead{background:#f1f5f9;font-size:.64rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+    th,td{padding:8px 14px;white-space:nowrap}
+    th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
+    th.l,td.l{text-align:left}
+    th.sortable{cursor:pointer;user-select:none}
+    tbody tr{border-bottom:1px solid #f1f5f9}
+    tbody tr:nth-child(even){background:#fafbfc}
+    .scroll-x{overflow-x:auto}
+    .pos{color:var(--pos)} .neg{color:var(--neg)} .faint{color:var(--faint)}
+    .hi-real{background:var(--warn-bg)}
+
+    /* Verdict */
+    .verdict{padding:20px 22px;display:flex;gap:16px;align-items:flex-start}
+    .verdict .ic{font-size:1.6rem;color:var(--pos);margin-top:2px}
+    .verdict h3{margin:0 0 4px;font-size:1.15rem;color:var(--dark)}
+    .verdict p{margin:0;font-size:.9rem;line-height:1.5;color:#334155}
+    .verdict .horizons{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
+    .pill{font-size:.72rem;padding:4px 10px;border-radius:999px;background:#eef2f6;color:#334155}
+    .pill b{color:var(--dark)}
+
+    .chart-box{padding:16px;height:320px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+
+    footer{margin-top:40px;background:var(--dark);color:#cbd5e1}
+    footer .ft{padding:36px 24px}
+    footer .name{font-size:1rem;font-weight:600;color:#fff;margin-bottom:6px}
+    footer p{font-size:.82rem;line-height:1.6;color:#94a3b8;margin:0}
+    footer .bar{border-top:1px solid rgba(255,255,255,.1)}
+    footer .bar .in{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;padding:14px 24px;font-size:.72rem;color:#64748b}
+
+    .loading{padding:30px 16px;text-align:center;color:var(--faint);font-size:.85rem}
+
+    /* Asesor IA */
+    .ia-btn{background:var(--primary);color:#fff;border:none;border-radius:6px;padding:7px 16px;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer}
+    .ia-btn.ghost{background:rgba(255,255,255,.18)}
+    .ia-btn:disabled{opacity:.5;cursor:default}
+    .ia-sel{border:1px solid #cbd5e1;border-radius:6px;padding:6px 8px;font-size:.78rem;font-family:inherit;background:#fff;color:#334155}
+    .ia-chat{padding:16px;min-height:240px;max-height:520px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;background:var(--bg)}
+    .ia-msg{max-width:88%;padding:10px 14px;border-radius:12px;font-size:.86rem;line-height:1.5}
+    .ia-msg.user{align-self:flex-end;background:var(--primary);color:#fff;border-bottom-right-radius:3px}
+    .ia-msg.bot{align-self:flex-start;background:#fff;border:1px solid var(--border);border-bottom-left-radius:3px;color:var(--ink)}
+    .ia-msg.bot table{width:100%;border-collapse:collapse;margin:8px 0;font-size:.8rem}
+    .ia-msg.bot th,.ia-msg.bot td{border:1px solid var(--border);padding:5px 8px;text-align:left}
+    .ia-msg.bot thead{background:#f1f5f9}
+    .ia-msg.bot p{margin:6px 0} .ia-msg.bot ul,.ia-msg.bot ol{margin:6px 0;padding-left:20px}
+    .ia-msg.bot h1,.ia-msg.bot h2,.ia-msg.bot h3{font-size:.95rem;margin:8px 0 4px;color:var(--dark)}
+    .ia-msg.bot code{background:#f1f5f9;padding:1px 4px;border-radius:4px;font-size:.78rem}
+    .ia-msg .ia-cv{background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px;margin-top:8px;height:240px}
+    .ia-input{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border);background:#fff}
+    .ia-input textarea{flex:1;border:1px solid #cbd5e1;border-radius:8px;padding:9px 12px;font-family:inherit;font-size:.86rem;resize:none;color:var(--ink)}
+    .ia-empty{color:var(--faint);font-size:.85rem;text-align:center;margin:auto;max-width:420px}
+
+    @media(max-width:760px){
+      .wrap,main{padding-left:14px;padding-right:14px}
+      .grid2{grid-template-columns:1fr}
+      .search{margin-left:0;width:100%}
+      /* tablas tipo tarjeta */
+      table.cards thead{display:none}
+      table.cards, table.cards tbody, table.cards tr, table.cards td{display:block;width:100%}
+      table.cards tr{border:1px solid var(--border);border-radius:8px;margin-bottom:10px;padding:6px 4px;background:#fff!important}
+      table.cards td{display:flex;justify-content:space-between;gap:14px;text-align:right;border:none;padding:5px 12px;white-space:normal}
+      table.cards td::before{content:attr(data-label);font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:left;font-weight:600}
+      table.cards td.l{text-align:right}
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="wrap brandrow">
+    <div class="logo">M</div>
+    <div>
+      <div class="brand-t">Portal de Inversor</div>
+      <div class="brand-s">Montagne · Central de decisión</div>
+    </div>
+    <div class="updated" id="updated"></div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="inner" id="tabNav">
+    <button data-tab="resumen">Resumen</button>
+    <button data-tab="money">Money Market</button>
+    <button data-tab="rentafija">Renta Fija</button>
+    <button data-tab="dolar">Dólar</button>
+    <button data-tab="acciones">Acciones / CEDEARs</button>
+    <button data-tab="historico">Histórico</button>
+    <button data-tab="asesor">Asesor IA</button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ============ RESUMEN ============ -->
+  <section class="tab-page" id="tab-resumen">
+    <div class="card">
+      <div class="card-h"><h2>¿Dónde conviene invertir hoy?</h2><p>Lectura de decisión · rendimiento real (neto de inflación)</p></div>
+      <div id="verdict" class="verdict"><span class="faint">Analizando…</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h teal"><h2>Pesos o dólar — Carry trade</h2><p>¿La tasa en pesos le gana a la devaluación esperada?</p></div>
+      <div class="toolbar">
+        <span class="lblcap">Devaluación esperada:</span>
+        <span class="numbox"><input type="number" id="devalInput" step="1" oninput="App.setDeval(this.value)"><span>% anual</span></span>
+        <span class="faint">por defecto = devaluación real de los últimos 12 meses · editá según el dólar futuro de tu broker</span>
+      </div>
+      <div id="carryBox" class="verdict"><span class="faint">Calculando…</span></div>
+      <div class="card-foot">Carry = tasa en pesos (mejor plazo fijo) − devaluación esperada. Positivo ⇒ conviene pesos; negativo ⇒ conviene dólar.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-h teal"><h2>Panorama de mercado</h2></div>
+      <div id="macroPanel" class="chips"><span class="faint">Cargando…</span></div>
+      <div class="toolbar">
+        <span class="lblcap">TIR real bono CER:</span>
+        <span class="numbox"><input type="number" id="cmpTir" value="10" step="0.5" oninput="App.setTir(this.value)"><span>% anual</span></span>
+        <span class="faint">tasa real del bono por encima de la inflación (editá según mercado)</span>
+      </div>
+      <div class="scroll-x">
+        <table class="cards" id="cmpTable">
+          <thead><tr><th class="l">Instrumento</th><th class="l">Detalle</th><th class="r">Nominal anual</th><th class="r">Real anual</th></tr></thead>
+          <tbody id="cmpBody"></tbody>
+        </table>
+      </div>
+      <div class="chart-box"><canvas id="chartReal"></canvas></div>
+      <div class="card-foot">Real = neto de inflación interanual (Fisher). Dólar = devaluación últ. 12m · Plazo fijo y Money Market en TNA actual · Bono CER a vencimiento.</div>
+    </div>
+  </section>
+
+  <!-- ============ MONEY MARKET ============ -->
+  <section class="tab-page" id="tab-money">
+    <div class="card">
+      <div class="card-h teal" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center">
+        <div><h2>Fondos Money Market — RG1121</h2><p>Ranking de rendimientos · datos CAFCI</p></div>
+        <span id="mdFecha" style="font-size:.74rem;color:rgba(255,255,255,.82)"></span>
+      </div>
+      <div class="toolbar">
+        <span class="lblcap">Moneda:</span>
+        <span class="seg"><button id="btnPesos" class="on" onclick="App.setMoneda('Peso Argentina')">Pesos</button><button id="btnDolar" onclick="App.setMoneda('Dolar Estadounidense')">Dólar</button></span>
+        <span class="lblcap">Tipo:</span>
+        <span class="seg"><button id="btnClasico" class="on" onclick="App.setTipo('Clásico')">Clásicos</button><button id="btnDinamico" onclick="App.setTipo('Dinámico')">Dinámicos</button></span>
+        <span class="lblcap">Com. broker:</span>
+        <span class="numbox"><input type="number" id="mdComision" value="0" min="0" step="0.1" oninput="App.setComision(this.value)"><span>% anual</span></span>
+        <input type="text" id="mdSearch" class="search" placeholder="Buscar fondo o sociedad…" oninput="App.renderMM()">
+        <span id="mdCount" class="faint" style="font-size:.74rem"></span>
+      </div>
+      <div id="mdInfl" class="chips" style="background:var(--warn-bg);color:var(--warn-ink);display:none"></div>
+      <div class="scroll-x" id="mdWrap" style="display:none">
+        <table><thead id="mdThead"></thead><tbody id="mdTbody"></tbody></table>
+      </div>
+      <div id="mdLoading" class="loading"><i class="fa fa-spinner fa-spin"></i> Cargando ranking…</div>
+      <div class="card-foot">PN en millones. La TNA ya es neta de los honorarios del fondo. "Real" = neto de inflación (Fisher) y de la comisión del broker ingresada.</div>
+    </div>
+  </section>
+
+  <!-- ============ RENTA FIJA ============ -->
+  <section class="tab-page" id="tab-rentafija">
+    <div class="card">
+      <div class="card-h"><h2>Plazo Fijo por banco</h2><p>TNA a clientes · fuente BCRA</p></div>
+      <div class="scroll-x" id="pfWrap"><div class="loading"><i class="fa fa-spinner fa-spin"></i> Cargando…</div></div>
+      <div class="card-foot">TNA = tasa nominal anual a clientes. El "real" descuenta la inflación interanual.</div>
+    </div>
+    <div class="card">
+      <div class="card-h teal"><h2>Bonos CER & soberanos</h2><p>Ajustan capital por inflación (CER) · precios de mercado</p></div>
+      <div class="toolbar">
+        <span class="lblcap">TIR real CER:</span>
+        <span class="numbox"><input type="number" id="rfTir" value="10" step="0.5" oninput="App.setTir(this.value)"><span>% anual</span></span>
+        <span class="faint">Un bono CER a vencimiento rinde ≈ inflación + esta TIR real.</span>
+      </div>
+      <div id="cerBox" class="chips" style="background:var(--good-bg)"></div>
+      <div class="scroll-x" id="bonosWrap"><div class="loading"><i class="fa fa-spinner fa-spin"></i> Cargando bonos…</div></div>
+      <div class="card-foot">Precios de data912.com. La TIR de mercado se carga manualmente (no disponible automática de forma confiable).</div>
+    </div>
+  </section>
+
+  <!-- ============ DOLAR ============ -->
+  <section class="tab-page" id="tab-dolar">
+    <div class="card">
+      <div class="card-h"><h2>Cotizaciones del dólar</h2><p>Último cierre por tipo de cambio</p></div>
+      <div id="dolarChips" class="chips"><span class="faint">Cargando…</span></div>
+      <div class="chart-box"><canvas id="chartDolar"></canvas></div>
+      <div class="card-foot">Fuente: ArgentinaDatos. MEP = bolsa · CCL = contado con liqui.</div>
+    </div>
+  </section>
+
+  <!-- ============ ACCIONES / CEDEARS ============ -->
+  <section class="tab-page" id="tab-acciones">
+    <div class="card">
+      <div class="card-h teal"><h2>Acciones & CEDEARs</h2><p>Cotizaciones del día · ordenadas por volumen</p></div>
+      <div class="toolbar">
+        <span class="lblcap">Mostrar:</span>
+        <span class="seg"><button id="acCedear" class="on" onclick="App.setMercado('cedear')">CEDEARs</button><button id="acAccion" onclick="App.setMercado('accion')">Acciones</button></span>
+        <input type="text" id="acSearch" class="search" placeholder="Buscar símbolo…" oninput="App.renderMercado()">
+      </div>
+      <div class="scroll-x" id="acWrap"><div class="loading"><i class="fa fa-spinner fa-spin"></i> Cargando…</div></div>
+      <div class="card-foot">CEDEARs = acciones globales que cotizan en pesos (cobertura dólar). Fuente: data912.com.</div>
+    </div>
+  </section>
+
+  <!-- ============ HISTORICO ============ -->
+  <section class="tab-page" id="tab-historico">
+    <div class="card">
+      <div class="card-h teal" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div><h2>Acciones &amp; CEDEARs — evolución</h2><p>Precio de cierre en pesos · fuente Yahoo Finance / BYMA</p></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="seg"><button id="hkAccion" class="on" onclick="App.setHistKind('accion')">Acciones</button><button id="hkCedear" onclick="App.setHistKind('cedear')">CEDEARs</button></span>
+          <select id="hkSymbol" class="ia-sel" onchange="App.drawHistSymbol()"></select>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="hSymbol"></canvas></div>
+      <div class="card-foot">Histórico diario. Acciones argentinas y CEDEARs cotizan en pesos en BYMA. El histórico se completa de a poco día a día.</div>
+    </div>
+    <div class="card"><div class="card-h"><h2>Inflación mensual (INDEC)</h2><p>Últimos 3 años</p></div><div class="chart-box"><canvas id="hInfl"></canvas></div></div>
+    <div class="grid2">
+      <div class="card"><div class="card-h teal"><h2>Dólar</h2></div><div class="chart-box"><canvas id="hDolar"></canvas></div></div>
+      <div class="card"><div class="card-h teal"><h2>Riesgo país</h2></div><div class="chart-box"><canvas id="hRiesgo"></canvas></div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><div class="card-h teal"><h2>Índice UVA (CER)</h2></div><div class="chart-box"><canvas id="hUva"></canvas></div></div>
+      <div class="card"><div class="card-h teal"><h2>Tasa plazo fijo 30 días</h2></div><div class="chart-box"><canvas id="hTasa"></canvas></div></div>
+    </div>
+  </section>
+
+  <!-- ============ ASESOR IA ============ -->
+  <section class="tab-page" id="tab-asesor">
+
+    <!-- LOGIN -->
+    <div class="card" id="iaGate">
+      <div class="card-h teal"><h2>Asesor IA — Acceso</h2><p>Ingresá tu clave privada</p></div>
+      <div class="toolbar" style="gap:8px">
+        <input type="password" id="iaKey" class="search" style="margin-left:0" placeholder="Clave privada">
+        <button class="ia-btn" onclick="App.iaLogin()">Entrar</button>
+        <span id="iaGateMsg" class="faint" style="font-size:.78rem"></span>
+      </div>
+      <div class="card-foot">El consumo de IA se mide por usuario. Pedí tu clave a dirección.</div>
+    </div>
+
+    <!-- APP (oculto hasta login) -->
+    <div id="iaApp" style="display:none">
+
+      <div class="card">
+        <div class="card-h teal" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div><h2>Asesor de Inversiones</h2><p id="iaWho"></p></div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <span id="iaConsumo" style="font-size:.74rem;color:rgba(255,255,255,.85)"></span>
+            <button class="ia-btn ghost" onclick="App.iaLogout()">Salir</button>
+          </div>
+        </div>
+        <div id="iaConsumoBar" class="chips" style="align-items:center"></div>
+      </div>
+
+      <!-- Vista dirección -->
+      <div class="card" id="iaAdmin" style="display:none">
+        <div class="card-h"><h2>Consumo por usuario</h2><p>Vista de dirección · período vigente</p></div>
+        <div class="scroll-x" id="iaAdminWrap"></div>
+        <div class="card-foot">El costo en USD permite evaluar el gasto de IA de cada usuario frente a sus decisiones.</div>
+      </div>
+
+      <!-- Mi cartera -->
+      <div class="card">
+        <div class="card-h" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="App.iaToggleCartera()">
+          <div><h2>Mi cartera</h2><p>Inversiones actuales y pasadas — la IA las usa para aconsejarte</p></div>
+          <i class="fa fa-chevron-down" id="iaCarteraChevron" style="color:#fff"></i>
+        </div>
+        <div id="iaCarteraBody" style="display:none">
+          <div class="toolbar" style="gap:8px">
+            <input id="iaCInstr" class="search" style="margin-left:0;min-width:170px" placeholder="Instrumento (ej. Plazo Fijo Galicia)">
+            <select id="iaCTipo" class="ia-sel">
+              <option value="plazo_fijo">Plazo fijo</option><option value="money_market">Money market</option>
+              <option value="bono">Bono</option><option value="dolar">Dólar</option><option value="accion">Acción</option>
+              <option value="cedear">CEDEAR</option><option value="cripto">Cripto</option><option value="otro">Otro</option>
+            </select>
+            <span class="numbox"><input type="number" id="iaCMonto" placeholder="Monto" style="width:96px"></span>
+            <select id="iaCMoneda" class="ia-sel"><option>ARS</option><option>USD</option></select>
+            <input type="date" id="iaCFecha" class="ia-sel">
+            <label style="font-size:.74rem;display:flex;align-items:center;gap:4px"><input type="checkbox" id="iaCActivo" checked> Vigente</label>
+            <button class="ia-btn" onclick="App.iaAddCartera()">Agregar</button>
+          </div>
+          <div class="scroll-x" id="iaCarteraWrap"></div>
+        </div>
+      </div>
+
+      <!-- Chat -->
+      <div class="card">
+        <div class="card-h teal"><h2>Consultá al asesor</h2><p>Preguntá dónde conviene invertir; responde con datos del portal</p></div>
+        <div id="iaChat" class="ia-chat"></div>
+        <div class="ia-input">
+          <textarea id="iaMsg" rows="1" placeholder="Escribí tu consulta… (ej. ¿Dónde pongo $2.000.000 a 6 meses?)"></textarea>
+          <button class="ia-btn" id="iaSendBtn" onclick="App.iaSend()">Enviar</button>
+        </div>
+        <div class="card-foot">No es asesoramiento financiero formal. La IA usa el snapshot de mercado y tu cartera.</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap ft">
+    <div class="name">Portal de Inversor — Montagne</div>
+    <p>Central de decisión de inversión. Compara money market, plazo fijo, dólar, bonos CER, acciones y CEDEARs en términos reales (netos de inflación).</p>
+  </div>
+  <div class="bar"><div class="wrap in">
+    <span>Fuentes: CAFCI · INDEC / ArgentinaDatos · BCRA · data912.com</span>
+    <span style="font-style:italic">No es asesoramiento financiero. Rendimientos pasados no garantizan futuros.</span>
+  </div></div>
+</footer>
+
+<script>
+var App = (function () {
+  'use strict';
+  var URL_ = 'https://kqwuvhfgykhjosglsznd.supabase.co';
+  var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtxd3V2aGZneWtoam9zZ2xzem5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MjcxMzcsImV4cCI6MjA5NTAwMzEzN30.qbyiJLidx9WS6di-KDiMU5ejLtsZu8mbHTBIdlQI_b4';
+  var H = { apikey: ANON, Authorization: 'Bearer ' + ANON };
+  var FN = URL_ + '/functions/v1/';
+
+  function sb(path) { return fetch(URL_ + '/rest/v1/' + path, { headers: H }).then(function (r) { return r.json(); }); }
+
+  // ---------- formatters ----------
+  function fnum(v, d) { if (v == null || v === '') return '—'; return parseFloat(v).toLocaleString('es-AR', { minimumFractionDigits: d == null ? 2 : d, maximumFractionDigits: d == null ? 2 : d }); }
+  function fpct(v) { if (v == null || v === '') return '—'; var n = parseFloat(v); return (n >= 0 ? '+' : '') + n.toFixed(2) + '%'; }
+  function fpctN(v) { if (v == null || v === '') return '—'; return parseFloat(v).toFixed(2) + '%'; }
+  function fpn(v) { if (v == null || v === '') return '—'; return (parseFloat(v) / 1e6).toLocaleString('es-AR', { maximumFractionDigits: 0 }); }
+  function cls(v) { if (v == null || v === '') return 'faint'; return parseFloat(v) >= 0 ? 'pos' : 'neg'; }
+  function ddmmaa(s) { return s ? s.split('-').reverse().join('/') : ''; }
+  function latestOf(rows) { if (!rows || !rows.length) return []; var f = rows[0].fecha; return rows.filter(function (r) { return r.fecha === f; }); }
+
+  // ---------- state ----------
+  var tirCer = 10, comisionBroker = 0;
+  var devalEsperada = null, lastMacro = null;
+  var inflMensual = null, inflInteranual = null;
+  var cmpRows = null, mmData = null, mercadoData = { cedear: null, accion: null };
+  var monedaActual = 'Peso Argentina', tipoActual = 'Clásico', mercadoActual = 'cedear';
+  var sortCol = 'pn', sortAsc = false;
+  var charts = {};
+
+  // ================= ROUTER =================
+  var TABS = ['resumen', 'money', 'rentafija', 'dolar', 'acciones', 'historico', 'asesor'];
+  var inited = {};
+  function showTab(id) {
+    if (TABS.indexOf(id) < 0) id = 'resumen';
+    TABS.forEach(function (t) {
+      document.getElementById('tab-' + t).classList.toggle('active', t === id);
+    });
+    [].forEach.call(document.querySelectorAll('#tabNav button'), function (b) {
+      b.classList.toggle('active', b.getAttribute('data-tab') === id);
+    });
+    if (!inited[id]) { inited[id] = true; initTab(id); }
+  }
+  function route() { showTab((location.hash || '#resumen').slice(1)); }
+
+  function initTab(id) {
+    if (id === 'resumen') initResumen();
+    else if (id === 'money') initMM();
+    else if (id === 'rentafija') initRF();
+    else if (id === 'dolar') initDolar();
+    else if (id === 'acciones') initMercado();
+    else if (id === 'historico') initHist();
+    else if (id === 'asesor') initAsesor();
+  }
+
+  // ================= RESUMEN =================
+  function initResumen() {
+    sb('panel_macro?select=*').then(function (r) { renderMacro(r && r[0]); }).catch(function () {});
+    sb('comparador_instrumentos?select=*').then(function (rows) {
+      cmpRows = rows; drawComparador(); drawVerdict();
+      if (devalEsperada == null) { var td = getCmp('Dólar MEP'); if (td != null) devalEsperada = td; }
+      var inp = document.getElementById('devalInput'); if (inp && devalEsperada != null && inp.value === '') inp.value = devalEsperada.toFixed(1);
+      drawCarry();
+    }).catch(function () {});
+  }
+  function getCmp(name) { var r = (cmpRows || []).filter(function (x) { return x.instrumento === name; })[0]; return r ? parseFloat(r.nominal_anual) : null; }
+  function setDeval(v) { var n = parseFloat(String(v).replace(',', '.')); devalEsperada = isNaN(n) ? null : n; drawCarry(); }
+  function drawCarry() {
+    var el = document.getElementById('carryBox'); if (!el) return;
+    var pr = getCmp('Plazo Fijo (mejor banco)'), td = getCmp('Dólar MEP');
+    if (pr == null) { el.innerHTML = '<span class="faint">Sin datos.</span>'; return; }
+    var dev = devalEsperada != null ? devalEsperada : td;
+    if (dev == null) { el.innerHTML = '<span class="faint">Ingresá la devaluación esperada.</span>'; return; }
+    var carry = pr - dev, pesos = carry >= 0;
+    var ic = pesos ? 'fa-circle-check' : 'fa-triangle-exclamation', col = pesos ? 'var(--pos)' : 'var(--neg)';
+    var brecha = lastMacro && lastMacro.brecha_mep_pct != null ? lastMacro.brecha_mep_pct + '%' : '—';
+    el.innerHTML = '<i class="fa ' + ic + ' ic" style="color:' + col + '"></i>' +
+      '<div><h3>' + (pesos ? 'Conviene quedarse en PESOS' : 'Conviene DOLARIZARSE') + '</h3>' +
+      '<p>Tasa en pesos (mejor plazo fijo) <b>' + fpctN(pr) + '</b> − devaluación esperada <b>' + fpctN(dev) + '</b> = ' +
+      '<b class="' + (pesos ? 'pos' : 'neg') + '">' + fpct(carry) + ' de carry</b>. ' +
+      (pesos ? 'La tasa le gana a la devaluación esperada — el carry es positivo.' : 'La devaluación esperada supera la tasa — conviene cobertura en dólar.') + '</p>' +
+      '<div class="horizons">' +
+        '<span class="pill"><b>Brecha CCL/oficial:</b> ' + brecha + '</span>' +
+        '<span class="pill"><b>Devaluación últ. 12m:</b> ' + (td != null ? fpctN(td) : '—') + '</span>' +
+      '</div></div>';
+  }
+  function renderMacro(m) {
+    if (!m) return;
+    lastMacro = m; drawCarry();
+    document.getElementById('updated').textContent = 'Mercado al ' + ddmmaa(m.fecha);
+    function chip(l, v) { return '<span><span class="lbl">' + l + ':</span> <b>' + v + '</b></span>'; }
+    document.getElementById('macroPanel').innerHTML =
+      chip('MEP', '$' + fnum(m.mep, 0)) + chip('CCL', '$' + fnum(m.ccl, 0)) + chip('Blue', '$' + fnum(m.blue, 0)) +
+      chip('Oficial', '$' + fnum(m.oficial, 0)) + chip('Brecha', m.brecha_mep_pct != null ? m.brecha_mep_pct + '%' : '—') +
+      chip('Riesgo país', m.riesgo_pais != null ? Math.round(m.riesgo_pais) + ' pb' : '—');
+  }
+  function allOptions() {
+    // [{label, real}] desde comparador + fila CER, excluyendo Inflación
+    if (!cmpRows) return { ia: null, opts: [] };
+    var ia = null, opts = [];
+    cmpRows.forEach(function (r) {
+      if (r.instrumento === 'Inflación') { ia = parseFloat(r.nominal_anual); return; }
+      opts.push({ label: r.instrumento, detalle: r.detalle, nominal: parseFloat(r.nominal_anual), real: parseFloat(r.real_anual) });
+    });
+    if (ia != null) {
+      var nomCer = ((1 + ia / 100) * (1 + tirCer / 100) - 1) * 100;
+      opts.push({ label: 'Bono CER (a vencimiento)', detalle: 'Inflación + TIR real ' + tirCer + '%', nominal: nomCer, real: tirCer });
+    }
+    return { ia: ia, opts: opts };
+  }
+  function drawComparador() {
+    var d = allOptions(), tb = document.getElementById('cmpBody');
+    tb.innerHTML = '';
+    function row(label, det, nom, real, opts) {
+      opts = opts || {};
+      var realTxt = opts.realText != null ? opts.realText : fpct(real);
+      var c = opts.realCls || cls(real);
+      var tr = document.createElement('tr');
+      if (opts.bg) tr.style.background = opts.bg;
+      tr.innerHTML =
+        '<td class="l" data-label="Instrumento" style="font-weight:' + (opts.bold ? 700 : 500) + '">' + label + '</td>' +
+        '<td class="l faint" data-label="Detalle">' + (det || '') + '</td>' +
+        '<td class="r" data-label="Nominal">' + fpctN(nom) + '</td>' +
+        '<td class="r ' + c + '" data-label="Real anual" style="font-weight:600">' + realTxt + '</td>';
+      tb.appendChild(tr);
+    }
+    if (d.ia != null) row('Inflación', 'interanual', d.ia, 0, { bg: '#fffbeb', bold: true, realCls: '', realText: '<span style="color:#92400e">referencia</span>' });
+    // ordenar opciones por real desc para lectura de decisión
+    d.opts.slice().sort(function (a, b) { return b.real - a.real; }).forEach(function (o) {
+      row(o.label, o.detalle, o.nominal, o.real, /CER/.test(o.label) ? { bg: '#f0fdf4' } : {});
+    });
+    drawRealChart(d);
+  }
+  function drawRealChart(d) {
+    if (typeof Chart === 'undefined') return;
+    var items = d.opts.slice().sort(function (a, b) { return a.real - b.real; });
+    var labels = items.map(function (o) { return o.label.replace(' (a vencimiento)', '').replace(' (mejor banco)', '').replace(' (mejor)', '').replace(' (promedio)', ' prom'); });
+    var data = items.map(function (o) { return +o.real.toFixed(2); });
+    var colors = data.map(function (v) { return v >= 0 ? '#16a34a' : '#dc2626'; });
+    if (charts.real) charts.real.destroy();
+    charts.real = new Chart(document.getElementById('chartReal'), {
+      type: 'bar',
+      data: { labels: labels, datasets: [{ label: 'Real anual %', data: data, backgroundColor: colors }] },
+      options: { indexAxis: 'y', plugins: { legend: { display: false }, title: { display: true, text: 'Rendimiento real anual por instrumento (%)' } }, scales: { x: { grid: { color: '#eef2f6' } } }, maintainAspectRatio: false }
+    });
+  }
+  function drawVerdict() {
+    var d = allOptions(), el = document.getElementById('verdict');
+    if (!d.opts.length) { el.innerHTML = '<span class="faint">Sin datos.</span>'; return; }
+    var best = d.opts.slice().sort(function (a, b) { return b.real - a.real; })[0];
+    var pos = best.real > 0;
+    var ic = pos ? 'fa-circle-check' : 'fa-triangle-exclamation';
+    var icColor = pos ? 'var(--pos)' : 'var(--neg)';
+    var titulo, texto;
+    if (pos) {
+      titulo = 'Para preservar valor hoy: ' + best.label.replace(' (a vencimiento)', '');
+      texto = 'Rinde <b class="pos">' + fpct(best.real) + ' real</b> (por encima de la inflación de ' + fpctN(d.ia) + ' interanual). ' +
+              'Es la opción con mejor rendimiento real disponible.';
+    } else {
+      titulo = 'Ninguna opción conservadora le gana a la inflación';
+      texto = 'La inflación corre al <b>' + fpctN(d.ia) + '</b> interanual y la mejor alternativa (' + best.label + ') rinde <b class="neg">' + fpct(best.real) + ' real</b>. ' +
+              'Todo lo conservador pierde poder adquisitivo — conviene mirar bonos CER o activos en dólares.';
+    }
+    el.innerHTML =
+      '<i class="fa ' + ic + ' ic" style="color:' + icColor + '"></i>' +
+      '<div><h3>' + titulo + '</h3><p>' + texto + '</p>' +
+      '<div class="horizons">' +
+        '<span class="pill"><b>Corto plazo / liquidez:</b> Money Market</span>' +
+        '<span class="pill"><b>Cobertura inflación:</b> Bono CER</span>' +
+        '<span class="pill"><b>Cobertura dólar:</b> CEDEARs / MEP</span>' +
+      '</div></div>';
+  }
+  function setTir(v) {
+    tirCer = parseFloat(String(v).replace(',', '.')); if (isNaN(tirCer)) tirCer = 0;
+    var a = document.getElementById('cmpTir'), b = document.getElementById('rfTir');
+    if (a) a.value = v; if (b) b.value = v;
+    if (cmpRows) { drawComparador(); drawVerdict(); }
+    if (inited.rentafija) drawCer();
+  }
+
+  // ================= MONEY MARKET =================
+  var MM_COLS = [
+    { k: 'fondo_nombre', t: 'Fondo', a: 'l' }, { k: 'sociedad', t: 'Sociedad', a: 'l' },
+    { k: 'vcp', t: 'VCP', a: 'r' }, { k: 'tna_dia', t: 'TNA 1d', a: 'r' }, { k: 'tna_7d', t: 'TNA 7d', a: 'r' },
+    { k: 'tna_30d', t: 'TNA 30d', a: 'r' }, { k: 'dir_30d', t: 'Dir 30d', a: 'r' },
+    { k: 'tna_90d', t: 'TNA 90d', a: 'r' }, { k: 'tna_180d', t: 'TNA 180d', a: 'r' }, { k: 'tna_12m', t: 'TNA 12m', a: 'r' },
+    { k: 'tna_ytd', t: 'TNA YTD', a: 'r' }, { k: 'dir_ytd', t: 'Dir YTD', a: 'r' },
+    { k: 'real_30d', t: 'Real 30d', a: 'r' }, { k: 'tna_real', t: 'TNA real', a: 'r' }, { k: 'pn', t: 'PN (MM)', a: 'r' }
+  ];
+  function initMM() {
+    var sel = 'fondo_nombre,clase_nombre,sociedad,moneda_nombre,tipo_dinero,valor_cuotaparte,patrimonio_neto,tna_dia,dir_dia,tna_7d,dir_7d,tna_mes_1,dir_mes_1,tna_90d,tna_180d,tna_12m,tna_ytd,dir_ytd,infl_mensual,infl_interanual,infl_fecha,fecha_base';
+    sb('cafci_fondos_latest?select=' + sel + '&order=patrimonio_neto.desc').then(function (rows) {
+      mmData = rows || [];
+      if (mmData.length) { inflMensual = mmData[0].infl_mensual; inflInteranual = mmData[0].infl_interanual; }
+      var f = mmData.length ? mmData[0].fecha_base : null;
+      document.getElementById('mdFecha').textContent = f ? 'Datos al ' + ddmmaa(f) : '';
+      renderInfl(mmData[0]);
+      document.getElementById('mdLoading').style.display = 'none';
+      document.getElementById('mdWrap').style.display = 'block';
+      renderMM();
+    }).catch(function () { document.getElementById('mdLoading').innerHTML = '<i class="fa fa-triangle-exclamation" style="color:#f59e0b"></i> Error al cargar fondos'; });
+  }
+  function renderInfl(row) {
+    var el = document.getElementById('mdInfl');
+    if (!row || row.infl_mensual == null) { el.style.display = 'none'; return; }
+    el.style.display = 'flex';
+    el.innerHTML = '<span><i class="fa fa-fire" style="color:#d97706"></i> <b>Inflación INDEC (' + (row.infl_fecha ? row.infl_fecha.slice(0, 7).split('-').reverse().join('/') : '') + ')</b></span>' +
+      '<span><span class="lbl">Mensual</span> <b>' + fpct(row.infl_mensual) + '</b></span>' +
+      '<span><span class="lbl">Interanual</span> <b>' + fpct(row.infl_interanual) + '</b></span>';
+  }
+  function realRet(tna30, dir30) {
+    var o = { real_30d: null, tna_real: null };
+    if (tna30 != null && inflInteranual != null) o.tna_real = ((1 + (tna30 - comisionBroker) / 100) / (1 + inflInteranual / 100) - 1) * 100;
+    if (dir30 != null && inflMensual != null) o.real_30d = ((1 + (dir30 - comisionBroker / 12) / 100) / (1 + inflMensual / 100) - 1) * 100;
+    return o;
+  }
+  function buildMMHead() {
+    var h = '<tr>';
+    MM_COLS.forEach(function (c) {
+      var on = c.k === sortCol, arr = on ? (sortAsc ? ' ▲' : ' ▼') : '';
+      h += '<th class="sortable ' + c.a + '" style="' + (on ? 'color:var(--primary)' : '') + '" onclick="App.sortMM(\'' + c.k + '\')">' + c.t + arr + '</th>';
+    });
+    document.getElementById('mdThead').innerHTML = h + '</tr>';
+  }
+  function renderMM() {
+    if (!mmData) return;
+    var q = (document.getElementById('mdSearch').value || '').toLowerCase();
+    var rows = mmData.filter(function (c) {
+      if (c.moneda_nombre !== monedaActual || c.tipo_dinero !== tipoActual) return false;
+      if (q && (c.fondo_nombre || '').toLowerCase().indexOf(q) < 0 && (c.sociedad || '').toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    }).map(function (c) {
+      var rr = realRet(c.tna_mes_1, c.dir_mes_1), lab = '';
+      if (c.clase_nombre) { var s = c.clase_nombre.indexOf(' - '); lab = s >= 0 ? c.clase_nombre.slice(s + 3) : ''; }
+      return { fondo_nombre: c.fondo_nombre, clase: lab, sociedad: c.sociedad, vcp: c.valor_cuotaparte, pn: c.patrimonio_neto,
+        tna_dia: c.tna_dia, tna_7d: c.tna_7d, tna_30d: c.tna_mes_1, dir_30d: c.dir_mes_1, tna_90d: c.tna_90d, tna_180d: c.tna_180d,
+        tna_12m: c.tna_12m, tna_ytd: c.tna_ytd, dir_ytd: c.dir_ytd, real_30d: rr.real_30d, tna_real: rr.tna_real };
+    });
+    rows.sort(function (a, b) {
+      var av = a[sortCol], bv = b[sortCol];
+      if (av == null && bv == null) return 0; if (av == null) return 1; if (bv == null) return -1;
+      var txt = sortCol === 'fondo_nombre' || sortCol === 'sociedad';
+      var c = txt ? String(av).localeCompare(String(bv), 'es') : parseFloat(av) - parseFloat(bv);
+      return sortAsc ? c : -c;
+    });
+    buildMMHead();
+    document.getElementById('mdCount').textContent = rows.length + ' fondos';
+    var tb = document.getElementById('mdTbody'); tb.innerHTML = '';
+    if (!rows.length) { tb.innerHTML = '<tr><td colspan="15" class="loading">Sin resultados</td></tr>'; return; }
+    rows.forEach(function (r) {
+      function pc(v, hl) { return '<td class="r ' + cls(v) + '"' + (hl ? ' style="background:var(--warn-bg)"' : '') + '>' + fpct(v) + '</td>'; }
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td class="l"><div style="font-weight:500">' + (r.fondo_nombre || '') + '</div>' + (r.clase ? '<div class="faint" style="font-size:.66rem">' + r.clase + '</div>' : '') + '</td>' +
+        '<td class="l faint">' + (r.sociedad || '').split(' ').slice(0, 3).join(' ') + '</td>' +
+        '<td class="r">' + fnum(r.vcp) + '</td>' + pc(r.tna_dia) + pc(r.tna_7d) + pc(r.tna_30d) +
+        '<td class="r ' + cls(r.dir_30d) + '" style="font-weight:600">' + fpct(r.dir_30d) + '</td>' +
+        pc(r.tna_90d) + pc(r.tna_180d) + pc(r.tna_12m) + pc(r.tna_ytd) +
+        '<td class="r ' + cls(r.dir_ytd) + '" style="font-weight:600">' + fpct(r.dir_ytd) + '</td>' +
+        pc(r.real_30d, true) + pc(r.tna_real, true) +
+        '<td class="r faint">' + fpn(r.pn) + '</td>';
+      tb.appendChild(tr);
+    });
+  }
+  function setMoneda(m) { monedaActual = m; document.getElementById('btnPesos').classList.toggle('on', m === 'Peso Argentina'); document.getElementById('btnDolar').classList.toggle('on', m !== 'Peso Argentina'); renderMM(); }
+  function setTipo(t) { tipoActual = t; document.getElementById('btnClasico').classList.toggle('on', t === 'Clásico'); document.getElementById('btnDinamico').classList.toggle('on', t !== 'Clásico'); renderMM(); }
+  function setComision(v) { comisionBroker = parseFloat(String(v).replace(',', '.')) || 0; if (comisionBroker < 0) comisionBroker = 0; renderMM(); }
+  function sortMM(k) { if (sortCol === k) sortAsc = !sortAsc; else { sortCol = k; sortAsc = (k === 'fondo_nombre' || k === 'sociedad'); } renderMM(); }
+
+  // ================= RENTA FIJA =================
+  function initRF() {
+    sb('plazo_fijo?select=entidad,tna_clientes,fecha&order=fecha.desc,tna_clientes.desc&limit=80').then(function (rows) {
+      var latest = latestOf(rows);
+      var ia = inflInteranual;
+      var wrap = document.getElementById('pfWrap');
+      if (!latest.length) { wrap.innerHTML = '<div class="loading">Sin datos</div>'; return; }
+      var html = '<table class="cards"><thead><tr><th class="l">Banco</th><th class="r">TNA</th><th class="r">Real anual</th></tr></thead><tbody>';
+      latest.forEach(function (r) {
+        var real = (ia != null && r.tna_clientes != null) ? ((1 + r.tna_clientes / 100) / (1 + ia / 100) - 1) * 100 : null;
+        html += '<tr><td class="l" data-label="Banco">' + (r.entidad || '') + '</td><td class="r" data-label="TNA">' + fpctN(r.tna_clientes) + '</td><td class="r ' + cls(real) + '" data-label="Real" style="font-weight:600">' + (real == null ? '—' : fpct(real)) + '</td></tr>';
+      });
+      wrap.innerHTML = html + '</tbody></table>';
+    }).catch(function () { document.getElementById('pfWrap').innerHTML = '<div class="loading">Error</div>'; });
+
+    if (!cmpRows) sb('comparador_instrumentos?select=*').then(function (r) { cmpRows = r; drawCer(); }); else drawCer();
+
+    sb('cotizaciones_mercado?tipo=eq.bono&select=symbol,ultimo,pct_change,volumen,fecha&order=fecha.desc,volumen.desc&limit=120').then(function (rows) {
+      var latest = latestOf(rows).slice(0, 40), wrap = document.getElementById('bonosWrap');
+      if (!latest.length) { wrap.innerHTML = '<div class="loading">Sin datos</div>'; return; }
+      var html = '<table class="cards"><thead><tr><th class="l">Bono</th><th class="r">Último</th><th class="r">Var. día</th></tr></thead><tbody>';
+      latest.forEach(function (r) {
+        html += '<tr><td class="l" data-label="Bono" style="font-weight:500">' + r.symbol + '</td><td class="r" data-label="Último">' + fnum(r.ultimo) + '</td><td class="r ' + cls(r.pct_change) + '" data-label="Var">' + fpct(r.pct_change) + '</td></tr>';
+      });
+      wrap.innerHTML = html + '</tbody></table>';
+    }).catch(function () { document.getElementById('bonosWrap').innerHTML = '<div class="loading">Error</div>'; });
+  }
+  function drawCer() {
+    var d = allOptions(), el = document.getElementById('cerBox');
+    if (!el) return;
+    if (d.ia == null) { el.innerHTML = '<span class="faint">—</span>'; return; }
+    var nom = ((1 + d.ia / 100) * (1 + tirCer / 100) - 1) * 100;
+    el.innerHTML = '<span><i class="fa fa-seedling" style="color:#16a34a"></i> <b>Bono CER a vencimiento</b></span>' +
+      '<span><span class="lbl">Inflación i.a.</span> <b>' + fpctN(d.ia) + '</b></span>' +
+      '<span><span class="lbl">+ TIR real</span> <b>' + tirCer + '%</b></span>' +
+      '<span><span class="lbl">Nominal estimado</span> <b>' + fpctN(nom) + '</b></span>' +
+      '<span><span class="lbl">Real</span> <b class="pos">' + fpct(tirCer) + '</b></span>';
+  }
+
+  // ================= DOLAR =================
+  function initDolar() {
+    sb('dolar?select=casa,venta,fecha&order=fecha.desc&limit=40').then(function (rows) {
+      var seen = {}, latest = [];
+      rows.forEach(function (r) { if (!seen[r.casa]) { seen[r.casa] = 1; latest.push(r); } });
+      var names = { bolsa: 'MEP', contadoconliqui: 'CCL', blue: 'Blue', oficial: 'Oficial', mayorista: 'Mayorista', cripto: 'Cripto', tarjeta: 'Tarjeta' };
+      function chip(l, v) { return '<span><span class="lbl">' + l + ':</span> <b>$' + fnum(v, 0) + '</b></span>'; }
+      var html = '';
+      latest.forEach(function (r) { if (names[r.casa]) html += chip(names[r.casa], r.venta); });
+      document.getElementById('dolarChips').innerHTML = html || '<span class="faint">Sin datos</span>';
+    }).catch(function () {});
+    sb('dolar?select=casa,venta,fecha&casa=in.(bolsa,contadoconliqui,blue)&order=fecha.desc&limit=1100').then(function (rows) {
+      var by = { bolsa: {}, contadoconliqui: {}, blue: {} };
+      rows.forEach(function (r) { if (by[r.casa]) by[r.casa][r.fecha] = r.venta; });
+      var fechas = Object.keys(by.bolsa).sort().slice(-365);
+      function ds(casa, color) { return { label: { bolsa: 'MEP', contadoconliqui: 'CCL', blue: 'Blue' }[casa], data: fechas.map(function (f) { return by[casa][f] != null ? by[casa][f] : null; }), borderColor: color, borderWidth: 1.5, pointRadius: 0, tension: .2 }; }
+      lineChart('chartDolar', 'dolar', fechas.map(ddmmaa), [ds('bolsa', '#37657e'), ds('contadoconliqui', '#d97706'), ds('blue', '#16a34a')]);
+    }).catch(function () {});
+  }
+
+  // ================= ACCIONES / CEDEARS =================
+  function initMercado() { loadMercado('cedear'); }
+  function loadMercado(tipo) {
+    if (mercadoData[tipo]) { renderMercado(); return; }
+    document.getElementById('acWrap').innerHTML = '<div class="loading"><i class="fa fa-spinner fa-spin"></i> Cargando…</div>';
+    sb('cotizaciones_mercado?tipo=eq.' + tipo + '&select=symbol,ultimo,pct_change,volumen,fecha&order=fecha.desc,volumen.desc&limit=200').then(function (rows) {
+      mercadoData[tipo] = latestOf(rows).slice(0, 60); renderMercado();
+    }).catch(function () { document.getElementById('acWrap').innerHTML = '<div class="loading">Error</div>'; });
+  }
+  function setMercado(t) { mercadoActual = t; document.getElementById('acCedear').classList.toggle('on', t === 'cedear'); document.getElementById('acAccion').classList.toggle('on', t === 'accion'); loadMercado(t); }
+  function renderMercado() {
+    var data = mercadoData[mercadoActual]; if (!data) return;
+    var q = (document.getElementById('acSearch').value || '').toUpperCase();
+    var rows = q ? data.filter(function (r) { return (r.symbol || '').toUpperCase().indexOf(q) >= 0; }) : data;
+    var html = '<table class="cards"><thead><tr><th class="l">Símbolo</th><th class="r">Último</th><th class="r">Var. día</th><th class="r">Volumen</th></tr></thead><tbody>';
+    rows.forEach(function (r) {
+      html += '<tr><td class="l" data-label="Símbolo" style="font-weight:500">' + r.symbol + '</td><td class="r" data-label="Último">' + fnum(r.ultimo) + '</td><td class="r ' + cls(r.pct_change) + '" data-label="Var">' + fpct(r.pct_change) + '</td><td class="r faint" data-label="Volumen">' + fnum(r.volumen, 0) + '</td></tr>';
+    });
+    document.getElementById('acWrap').innerHTML = html + '</tbody></table>';
+  }
+
+  // ================= HISTORICO =================
+  function lineChart(canvasId, key, labels, datasets) {
+    if (typeof Chart === 'undefined') return;
+    if (charts[key]) charts[key].destroy();
+    charts[key] = new Chart(document.getElementById(canvasId), {
+      type: 'line', data: { labels: labels, datasets: datasets },
+      options: { plugins: { legend: { display: datasets.length > 1 } }, scales: { x: { ticks: { maxTicksLimit: 8 }, grid: { display: false } }, y: { grid: { color: '#eef2f6' } } }, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' } }
+    });
+  }
+  function serie(canvasId, key, path, color, label, mapVal) {
+    sb(path).then(function (rows) {
+      rows = (rows || []).slice().reverse();
+      var labels = rows.map(function (r) { return ddmmaa(r.fecha); });
+      var data = rows.map(function (r) { return mapVal ? mapVal(r) : parseFloat(r.valor); });
+      lineChart(canvasId, key, labels, [{ label: label, data: data, borderColor: color, backgroundColor: 'rgba(55,101,126,.08)', borderWidth: 1.6, pointRadius: 0, tension: .2, fill: true }]);
+    }).catch(function () {});
+  }
+  var histKind = 'accion';
+  function setHistKind(k) {
+    histKind = k;
+    document.getElementById('hkAccion').classList.toggle('on', k === 'accion');
+    document.getElementById('hkCedear').classList.toggle('on', k === 'cedear');
+    loadHistSymbols();
+  }
+  function loadHistSymbols() {
+    sb('cotizaciones_series?tipo=eq.' + histKind + '&select=symbol,dias&order=dias.desc,symbol.asc&limit=400').then(function (rows) {
+      var sel = document.getElementById('hkSymbol');
+      if (!rows || !rows.length) { sel.innerHTML = '<option value="">— sin histórico aún —</option>'; if (charts.hsym) { charts.hsym.destroy(); charts.hsym = null; } return; }
+      sel.innerHTML = rows.map(function (r) { return '<option value="' + r.symbol + '">' + r.symbol + '</option>'; }).join('');
+      drawHistSymbol();
+    }).catch(function () { });
+  }
+  function drawHistSymbol() {
+    var sym = document.getElementById('hkSymbol').value; if (!sym) return;
+    sb('cotizaciones_mercado?tipo=eq.' + histKind + '&symbol=eq.' + encodeURIComponent(sym) + '&select=fecha,ultimo&order=fecha.asc&limit=1200').then(function (rows) {
+      rows = (rows || []).filter(function (r) { return r.ultimo != null; });
+      lineChart('hSymbol', 'hsym', rows.map(function (r) { return ddmmaa(r.fecha); }),
+        [{ label: sym + ' (ARS)', data: rows.map(function (r) { return parseFloat(r.ultimo); }), borderColor: '#37657e', backgroundColor: 'rgba(55,101,126,.08)', borderWidth: 1.6, pointRadius: 0, tension: .2, fill: true }]);
+    }).catch(function () { });
+  }
+  function initHist() {
+    loadHistSymbols();
+    serie('hInfl', 'infl', 'inflacion?select=fecha,mensual&order=fecha.desc&limit=36', '#d97706', 'Inflación mensual %', function (r) { return parseFloat(r.mensual); });
+    serie('hRiesgo', 'riesgo', 'riesgo_pais?select=fecha,valor&order=fecha.desc&limit=400', '#dc2626', 'Riesgo país (pb)');
+    serie('hUva', 'uva', 'uva?select=fecha,valor&order=fecha.desc&limit=400', '#37657e', 'Índice UVA');
+    serie('hTasa', 'tasa', 'tasas_30dias?select=fecha,tna&fecha=gte.2024-01-01&order=fecha.desc&limit=600', '#16a34a', 'TNA plazo fijo 30d %', function (r) { return parseFloat(r.tna); });
+    sb('dolar?select=casa,venta,fecha&casa=in.(bolsa,blue)&order=fecha.desc&limit=800').then(function (rows) {
+      var by = { bolsa: {}, blue: {} }; rows.forEach(function (r) { if (by[r.casa]) by[r.casa][r.fecha] = r.venta; });
+      var fechas = Object.keys(by.bolsa).sort().slice(-365);
+      lineChart('hDolar', 'hd', fechas.map(ddmmaa), [
+        { label: 'MEP', data: fechas.map(function (f) { return by.bolsa[f] || null; }), borderColor: '#37657e', borderWidth: 1.5, pointRadius: 0, tension: .2 },
+        { label: 'Blue', data: fechas.map(function (f) { return by.blue[f] || null; }), borderColor: '#16a34a', borderWidth: 1.5, pointRadius: 0, tension: .2 }
+      ]);
+    }).catch(function () {});
+  }
+
+  // ================= ASESOR IA =================
+  var iaKey = null, iaUser = null, iaConv = null, iaHist = [], iaBusy = false, iaCarteraOpen = false;
+  function iaHeaders() { return { 'Content-Type': 'application/json', apikey: ANON, Authorization: 'Bearer ' + ANON, 'x-portal-key': iaKey }; }
+  function fnPost(name, payload) { return fetch(FN + name, { method: 'POST', headers: iaHeaders(), body: JSON.stringify(payload || {}) }); }
+  function $id(x) { return document.getElementById(x); }
+
+  function initAsesor() {
+    iaKey = localStorage.getItem('mtg_portal_key');
+    if (iaKey) iaLoginSilent(); else iaShowGate();
+  }
+  function iaShowGate() { $id('iaGate').style.display = 'block'; $id('iaApp').style.display = 'none'; }
+  function iaLoginSilent() {
+    fnPost('portal', { action: 'login' }).then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+      .then(function (u) { iaUser = u; iaShowApp(); })
+      .catch(function () { iaKey = null; localStorage.removeItem('mtg_portal_key'); iaShowGate(); });
+  }
+  function iaLogin() {
+    var k = ($id('iaKey').value || '').trim(), msg = $id('iaGateMsg');
+    if (!k) { msg.textContent = 'Ingresá tu clave.'; return; }
+    iaKey = k; msg.textContent = 'Verificando…';
+    fnPost('portal', { action: 'login' }).then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+      .then(function (u) { iaUser = u; localStorage.setItem('mtg_portal_key', k); msg.textContent = ''; iaShowApp(); })
+      .catch(function () { iaKey = null; msg.textContent = 'Clave inválida.'; });
+  }
+  function iaLogout() {
+    iaKey = null; iaUser = null; iaConv = null; iaHist = []; localStorage.removeItem('mtg_portal_key');
+    $id('iaChat').innerHTML = ''; $id('iaKey').value = ''; iaShowGate();
+  }
+  function iaShowApp() {
+    $id('iaGate').style.display = 'none'; $id('iaApp').style.display = 'block';
+    $id('iaWho').textContent = (iaUser.nombre || '') + (iaUser.rol === 'direccion' ? ' · dirección' : '');
+    iaRenderConsumo(iaUser.consumo_usd, iaUser.limite_usd, iaUser.periodo);
+    if (!iaHist.length) $id('iaChat').innerHTML = '<div class="ia-empty">Preguntá lo que quieras sobre dónde invertir. La IA conoce el panorama de mercado de hoy y tu cartera.</div>';
+    iaLoadCartera();
+    if (iaUser.rol === 'direccion') { $id('iaAdmin').style.display = 'block'; iaLoadAdmin(); } else { $id('iaAdmin').style.display = 'none'; }
+  }
+  function iaRenderConsumo(c, lim, per) {
+    c = Number(c || 0); lim = Number(lim || 0);
+    var pct = lim > 0 ? Math.min(100, c / lim * 100) : 0;
+    $id('iaConsumo').textContent = 'Consumo: US$' + c.toFixed(3) + ' / US$' + lim.toFixed(2) + (per === 'mensual' ? ' (mes)' : '');
+    var col = pct >= 100 ? 'var(--neg)' : (pct >= 80 ? '#d97706' : 'var(--pos)');
+    $id('iaConsumoBar').innerHTML =
+      '<div style="flex:1;height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;min-width:160px"><div style="width:' + pct.toFixed(0) + '%;height:100%;background:' + col + '"></div></div>' +
+      '<span class="faint" style="font-size:.72rem">' + pct.toFixed(0) + '% del límite</span>';
+  }
+  function iaRefreshConsumo() {
+    fnPost('portal', { action: 'consumo' }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d && d.consumo_usd != null) iaRenderConsumo(d.consumo_usd, d.limite_usd, d.periodo);
+      if (iaUser && iaUser.rol === 'direccion') iaLoadAdmin();
+    }).catch(function () { });
+  }
+
+  // ---- cartera ----
+  function iaToggleCartera() {
+    iaCarteraOpen = !iaCarteraOpen;
+    $id('iaCarteraBody').style.display = iaCarteraOpen ? 'block' : 'none';
+    $id('iaCarteraChevron').className = (iaCarteraOpen ? 'fa fa-chevron-up' : 'fa fa-chevron-down');
+  }
+  function iaLoadCartera() {
+    fnPost('portal', { action: 'cartera_list' }).then(function (r) { return r.json(); })
+      .then(function (d) { iaRenderCartera(d.items || []); }).catch(function () { });
+  }
+  var IA_TIPOS = { money_market: 'Money market', plazo_fijo: 'Plazo fijo', bono: 'Bono', dolar: 'Dólar', accion: 'Acción', cedear: 'CEDEAR', cripto: 'Cripto', otro: 'Otro' };
+  function iaRenderCartera(items) {
+    var w = $id('iaCarteraWrap');
+    if (!items.length) { w.innerHTML = '<div class="loading" style="padding:14px">Sin inversiones cargadas todavía.</div>'; return; }
+    var h = '<table class="cards"><thead><tr><th class="l">Instrumento</th><th class="l">Tipo</th><th class="r">Monto</th><th class="l">Estado</th><th></th></tr></thead><tbody>';
+    items.forEach(function (it) {
+      h += '<tr><td class="l" data-label="Instrumento" style="font-weight:500">' + iaEscape(it.instrumento || '') + '</td>' +
+        '<td class="l faint" data-label="Tipo">' + (IA_TIPOS[it.tipo] || it.tipo) + '</td>' +
+        '<td class="r" data-label="Monto">' + (it.monto != null ? (it.moneda === 'USD' ? 'US$' : '$') + Number(it.monto).toLocaleString('es-AR') : '—') + '</td>' +
+        '<td class="l" data-label="Estado">' + (it.activo ? '<span class="pos">vigente</span>' : '<span class="faint">cerrada</span>') + '</td>' +
+        '<td class="r"><button class="ia-btn ghost" style="background:#fee2e2;color:#b91c1c;padding:3px 9px" onclick="App.iaDelCartera(' + it.id + ')">✕</button></td></tr>';
+    });
+    w.innerHTML = h + '</tbody></table>';
+  }
+  function iaAddCartera() {
+    var item = {
+      instrumento: ($id('iaCInstr').value || '').trim(), tipo: $id('iaCTipo').value,
+      monto: $id('iaCMonto').value, moneda: $id('iaCMoneda').value,
+      fecha_inicio: $id('iaCFecha').value, activo: $id('iaCActivo').checked
+    };
+    if (!item.instrumento) return;
+    fnPost('portal', { action: 'cartera_add', item: item }).then(function (r) { return r.json(); }).then(function () {
+      $id('iaCInstr').value = ''; $id('iaCMonto').value = ''; $id('iaCFecha').value = '';
+      iaLoadCartera();
+    }).catch(function () { });
+  }
+  function iaDelCartera(id) { fnPost('portal', { action: 'cartera_delete', id: id }).then(function () { iaLoadCartera(); }).catch(function () { }); }
+
+  // ---- admin (dirección) ----
+  function iaLoadAdmin() {
+    fnPost('portal', { action: 'consumo' }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d || !d.usuarios) return;
+      var h = '<table class="cards"><thead><tr><th class="l">Usuario</th><th class="l">Rol</th><th class="r">Consumo USD</th><th class="r">Límite</th><th class="r">Consultas</th></tr></thead><tbody>';
+      d.usuarios.forEach(function (u) {
+        var c = Number(u.consumo_usd || 0), lim = Number(u.limite_usd || 0), over = lim > 0 && c >= lim;
+        h += '<tr><td class="l" data-label="Usuario" style="font-weight:500">' + iaEscape(u.nombre || '') + '</td>' +
+          '<td class="l faint" data-label="Rol">' + u.rol + '</td>' +
+          '<td class="r ' + (over ? 'neg' : '') + '" data-label="Consumo USD" style="font-weight:600">US$' + c.toFixed(3) + '</td>' +
+          '<td class="r faint" data-label="Límite">US$' + lim.toFixed(2) + (u.periodo === 'mensual' ? '/mes' : '') + '</td>' +
+          '<td class="r faint" data-label="Consultas">' + (u.requests || 0) + '</td></tr>';
+      });
+      $id('iaAdminWrap').innerHTML = h + '</tbody></table>';
+    }).catch(function () { });
+  }
+
+  // ---- chat ----
+  function iaEscape(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function iaAppendMsg(role, html) {
+    var chat = $id('iaChat'), empty = chat.querySelector('.ia-empty'); if (empty) empty.remove();
+    var div = document.createElement('div'); div.className = 'ia-msg ' + (role === 'user' ? 'user' : 'bot'); div.innerHTML = html;
+    chat.appendChild(div); chat.scrollTop = chat.scrollHeight; return div;
+  }
+  function iaScroll() { var c = $id('iaChat'); c.scrollTop = c.scrollHeight; }
+  function iaSend() {
+    if (iaBusy || !iaKey) return;
+    var ta = $id('iaMsg'), text = (ta.value || '').trim(); if (!text) return;
+    ta.value = ''; iaBusy = true; $id('iaSendBtn').disabled = true;
+    iaAppendMsg('user', iaEscape(text).replace(/\n/g, '<br>'));
+    iaHist.push({ role: 'user', content: text });
+    var bot = iaAppendMsg('bot', '<span class="faint">Pensando…</span>'), acc = '';
+    fnPost('asesor-ia', { messages: iaHist, conversacion_id: iaConv })
+      .then(function (resp) {
+        if (!resp.ok) { return resp.json().then(function (e) { throw e; }); }
+        var cid = resp.headers.get('x-conversacion-id'); if (cid) iaConv = cid;
+        var reader = resp.body.getReader(), dec = new TextDecoder();
+        function pump() {
+          return reader.read().then(function (res) {
+            if (res.done) {
+              iaFinalizeBot(bot, acc); iaHist.push({ role: 'assistant', content: acc });
+              iaBusy = false; $id('iaSendBtn').disabled = false; iaRefreshConsumo(); return;
+            }
+            acc += dec.decode(res.value, { stream: true });
+            bot.innerHTML = iaEscape(acc).replace(/\n/g, '<br>'); iaScroll();
+            return pump();
+          });
+        }
+        return pump();
+      })
+      .catch(function (e) {
+        var base = iaEscape((e && e.error) || 'Error al consultar el asesor.'), det = '';
+        if (e && e.detail) {
+          var d = e.detail;
+          try { var j = JSON.parse(d); if (j.error && j.error.message) d = j.error.message; } catch (_) { }
+          det = '<div class="faint" style="font-size:.72rem;margin-top:4px">' + iaEscape(String(d).slice(0, 300)) + '</div>';
+        }
+        bot.innerHTML = '<span class="neg">' + base + '</span>' + det;
+        iaHist.pop(); iaBusy = false; $id('iaSendBtn').disabled = false;
+      });
+  }
+  function iaFinalizeBot(bot, text) {
+    var charts = [];
+    var clean = (text || '').replace(/```chart\s*([\s\S]*?)```/g, function (_m, j) { try { charts.push(JSON.parse(j.trim())); } catch (e) { } return ''; });
+    bot.innerHTML = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(clean) : iaEscape(clean).replace(/\n/g, '<br>');
+    charts.forEach(function (spec) {
+      var box = document.createElement('div'); box.className = 'ia-cv';
+      var cv = document.createElement('canvas'); box.appendChild(cv); bot.appendChild(box);
+      iaDrawChart(cv, spec);
+    });
+    iaScroll();
+  }
+  function iaDrawChart(canvas, spec) {
+    if (typeof Chart === 'undefined' || !spec || !spec.labels) return;
+    var data = (spec.data || []).map(Number);
+    var colors = spec.type === 'line' ? '#37657e' : data.map(function (v) { return v >= 0 ? '#16a34a' : '#dc2626'; });
+    new Chart(canvas, {
+      type: spec.type === 'line' ? 'line' : 'bar',
+      data: { labels: spec.labels, datasets: [{ label: spec.title || '', data: data, backgroundColor: colors, borderColor: '#37657e', borderWidth: 1.5, pointRadius: 0, tension: .2 }] },
+      options: { plugins: { legend: { display: false }, title: { display: !!spec.title, text: spec.title || '' } }, scales: { y: { grid: { color: '#eef2f6' } }, x: { grid: { display: false } } }, maintainAspectRatio: false }
+    });
+  }
+
+  // ================= init =================
+  window.addEventListener('hashchange', route);
+  [].forEach.call(document.querySelectorAll('#tabNav button'), function (b) {
+    b.addEventListener('click', function () {
+      var t = b.getAttribute('data-tab');
+      if (('#' + t) === location.hash) showTab(t); else location.hash = t;
+    });
+  });
+  // pre-cargar inflación interanual (la usan Renta Fija aunque no se abra Money Market)
+  sb('inflacion?select=mensual,interanual,fecha&order=fecha.desc&limit=1').then(function (r) {
+    if (r && r[0]) { if (inflMensual == null) inflMensual = r[0].mensual; if (inflInteranual == null) inflInteranual = r[0].interanual; }
+  });
+  (function () {
+    var ta = document.getElementById('iaMsg');
+    if (ta) ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); iaSend(); } });
+  })();
+  route();
+
+  return {
+    setTir: setTir, setDeval: setDeval, setMoneda: setMoneda, setTipo: setTipo, setComision: setComision,
+    sortMM: sortMM, renderMM: renderMM, setMercado: setMercado, renderMercado: renderMercado,
+    iaLogin: iaLogin, iaLogout: iaLogout, iaToggleCartera: iaToggleCartera, iaAddCartera: iaAddCartera,
+    iaDelCartera: iaDelCartera, iaSend: iaSend,
+    setHistKind: setHistKind, drawHistSymbol: drawHistSymbol
+  };
+})();
+</script>
+
+</body>
+</html>
