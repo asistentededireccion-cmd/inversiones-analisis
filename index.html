@@ -345,6 +345,32 @@
         </div>
       </div>
 
+      <!-- Mi perfil (memoria del asesor) -->
+      <div class="card">
+        <div class="card-h" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="App.iaTogglePerfil()">
+          <div><h2>Mi perfil de inversor</h2><p>El asesor lo recuerda entre conversaciones para personalizar sus consejos</p></div>
+          <i class="fa fa-chevron-down" id="iaPerfilChevron" style="color:#fff"></i>
+        </div>
+        <div id="iaPerfilBody" style="display:none">
+          <div class="toolbar" style="gap:8px;flex-wrap:wrap">
+            <span class="numbox"><input type="number" id="iaPMonto" placeholder="Monto disponible" style="width:140px"></span>
+            <select id="iaPMoneda" class="ia-sel"><option value="">Moneda…</option><option value="ARS">ARS</option><option value="USD">USD</option></select>
+            <select id="iaPHorizonte" class="ia-sel"><option value="">Horizonte…</option><option value="corto">Corto (&lt;6m)</option><option value="medio">Medio (6-24m)</option><option value="largo">Largo (&gt;2a)</option></select>
+            <select id="iaPTolerancia" class="ia-sel"><option value="">Riesgo…</option><option value="conservador">Conservador</option><option value="moderado">Moderado</option><option value="agresivo">Agresivo</option></select>
+            <input id="iaPObjetivo" class="search" style="margin-left:0;min-width:200px" placeholder="Objetivo (ej. preservar capital)">
+            <button class="ia-btn" onclick="App.iaSavePerfil()">Guardar perfil</button>
+            <span id="iaPerfilMsg" class="faint" style="font-size:.74rem"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seguimiento de recomendaciones -->
+      <div class="card" id="iaRecosCard" style="display:none">
+        <div class="card-h"><h2>Seguimiento de recomendaciones</h2><p>Qué recomendó el asesor y cómo evolucionó desde entonces</p></div>
+        <div class="scroll-x" id="iaRecosWrap"></div>
+        <div class="card-foot">El % aplica a acciones y CEDEARs (precio actual vs. precio al recomendar).</div>
+      </div>
+
       <!-- Chat -->
       <div class="card">
         <div class="card-h teal"><h2>Consultá al asesor</h2><p>Preguntá dónde conviene invertir; responde con datos del portal</p></div>
@@ -775,7 +801,7 @@ var App = (function () {
   }
 
   // ================= ASESOR IA =================
-  var iaKey = null, iaUser = null, iaConv = null, iaHist = [], iaBusy = false, iaCarteraOpen = false;
+  var iaKey = null, iaUser = null, iaConv = null, iaHist = [], iaBusy = false, iaCarteraOpen = false, iaPerfilOpen = false;
   function iaHeaders() { return { 'Content-Type': 'application/json', apikey: ANON, Authorization: 'Bearer ' + ANON, 'x-portal-key': iaKey }; }
   function fnPost(name, payload) { return fetch(FN + name, { method: 'POST', headers: iaHeaders(), body: JSON.stringify(payload || {}) }); }
   function $id(x) { return document.getElementById(x); }
@@ -807,7 +833,7 @@ var App = (function () {
     $id('iaWho').textContent = (iaUser.nombre || '') + (iaUser.rol === 'direccion' ? ' · dirección' : '');
     iaRenderConsumo(iaUser.consumo_usd, iaUser.limite_usd, iaUser.periodo);
     if (!iaHist.length) $id('iaChat').innerHTML = '<div class="ia-empty">Preguntá lo que quieras sobre dónde invertir. La IA conoce el panorama de mercado de hoy y tu cartera.</div>';
-    iaLoadCartera();
+    iaLoadCartera(); iaLoadPerfil(); iaLoadRecos();
     if (iaUser.rol === 'direccion') { $id('iaAdmin').style.display = 'block'; iaLoadAdmin(); } else { $id('iaAdmin').style.display = 'none'; }
   }
   function iaRenderConsumo(c, lim, per) {
@@ -864,6 +890,59 @@ var App = (function () {
   }
   function iaDelCartera(id) { fnPost('portal', { action: 'cartera_delete', id: id }).then(function () { iaLoadCartera(); }).catch(function () { }); }
 
+  // ---- perfil del inversor (memoria) ----
+  function iaTogglePerfil() {
+    iaPerfilOpen = !iaPerfilOpen;
+    $id('iaPerfilBody').style.display = iaPerfilOpen ? 'block' : 'none';
+    $id('iaPerfilChevron').className = (iaPerfilOpen ? 'fa fa-chevron-up' : 'fa fa-chevron-down');
+  }
+  function iaLoadPerfil() {
+    fnPost('portal', { action: 'perfil_get' }).then(function (r) { return r.json(); })
+      .then(function (d) { iaFillPerfil(d.perfil || null); }).catch(function () { });
+  }
+  function iaFillPerfil(p) {
+    p = p || {};
+    $id('iaPMonto').value = p.monto_disponible != null ? p.monto_disponible : '';
+    $id('iaPMoneda').value = p.moneda || '';
+    $id('iaPHorizonte').value = p.horizonte || '';
+    $id('iaPTolerancia').value = p.tolerancia || '';
+    $id('iaPObjetivo').value = p.objetivo || '';
+  }
+  function iaSavePerfil() {
+    var perfil = {
+      monto_disponible: $id('iaPMonto').value, moneda: $id('iaPMoneda').value,
+      horizonte: $id('iaPHorizonte').value, tolerancia: $id('iaPTolerancia').value,
+      objetivo: ($id('iaPObjetivo').value || '').trim()
+    };
+    var msg = $id('iaPerfilMsg'); msg.textContent = 'Guardando…';
+    fnPost('portal', { action: 'perfil_save', perfil: perfil }).then(function (r) { return r.json(); })
+      .then(function (d) { if (d.error) { msg.textContent = 'Error al guardar.'; } else { iaFillPerfil(d.perfil); msg.textContent = '✓ Guardado'; setTimeout(function () { msg.textContent = ''; }, 2500); } })
+      .catch(function () { msg.textContent = 'Error al guardar.'; });
+  }
+
+  // ---- seguimiento de recomendaciones ----
+  function iaLoadRecos() {
+    fnPost('portal', { action: 'recos_list' }).then(function (r) { return r.json(); })
+      .then(function (d) { iaRenderRecos(d.items || []); }).catch(function () { });
+  }
+  function iaRenderRecos(items) {
+    var card = $id('iaRecosCard');
+    if (!items.length) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    var h = '<table class="cards"><thead><tr><th class="l">Instrumento</th><th class="l">Fecha</th><th class="r">Precio ref.</th><th class="r">Actual</th><th class="r">Var.</th><th class="l">Tesis</th></tr></thead><tbody>';
+    items.forEach(function (it) {
+      var v = it.var_desde_reco_pct;
+      var vTxt = v != null ? '<span class="' + (v >= 0 ? 'pos' : 'neg') + '">' + (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%</span>' : '—';
+      h += '<tr><td class="l" data-label="Instrumento" style="font-weight:500">' + iaEscape(it.instrumento || '') + ' <span class="faint">' + (IA_TIPOS[it.tipo] || it.tipo) + '</span></td>' +
+        '<td class="l faint" data-label="Fecha">' + iaEscape(it.fecha || '') + '</td>' +
+        '<td class="r" data-label="Precio ref.">' + (it.precio_ref != null ? '$' + Number(it.precio_ref).toLocaleString('es-AR') : '—') + '</td>' +
+        '<td class="r" data-label="Actual">' + (it.px_actual != null ? '$' + Number(it.px_actual).toLocaleString('es-AR') : '—') + '</td>' +
+        '<td class="r" data-label="Var.">' + vTxt + '</td>' +
+        '<td class="l faint" data-label="Tesis" style="font-size:.78rem">' + iaEscape(it.tesis || '') + '</td></tr>';
+    });
+    $id('iaRecosWrap').innerHTML = h + '</tbody></table>';
+  }
+
   // ---- admin (dirección) ----
   function iaLoadAdmin() {
     fnPost('portal', { action: 'consumo' }).then(function (r) { return r.json(); }).then(function (d) {
@@ -895,20 +974,47 @@ var App = (function () {
     ta.value = ''; iaBusy = true; $id('iaSendBtn').disabled = true;
     iaAppendMsg('user', iaEscape(text).replace(/\n/g, '<br>'));
     iaHist.push({ role: 'user', content: text });
-    var bot = iaAppendMsg('bot', '<span class="faint">Pensando…</span>'), acc = '';
+    var bot = iaAppendMsg('bot', '<span class="faint">Pensando…</span>'), acc = '', errored = false, perfilTouched = false;
+    function finish() { iaBusy = false; $id('iaSendBtn').disabled = false; }
     fnPost('asesor-ia', { messages: iaHist, conversacion_id: iaConv })
       .then(function (resp) {
         if (!resp.ok) { return resp.json().then(function (e) { throw e; }); }
         var cid = resp.headers.get('x-conversacion-id'); if (cid) iaConv = cid;
-        var reader = resp.body.getReader(), dec = new TextDecoder();
+        var reader = resp.body.getReader(), dec = new TextDecoder(), buf = '';
+        function handle(ev) {
+          if (ev.t === 'token') {
+            acc += ev.v;
+            bot.innerHTML = iaEscape(acc).replace(/\n/g, '<br>'); iaScroll();
+          } else if (ev.t === 'tool') {
+            if (ev.name === 'guardar_perfil') perfilTouched = true;
+            if (!acc) { // mostrar estado solo mientras no llegó la respuesta final
+              var lbl = IA_TOOLLBL[ev.name] || 'Consultando';
+              bot.innerHTML = '<span class="faint">🔎 ' + iaEscape(lbl) + (ev.arg ? ' · ' + iaEscape(ev.arg) : '') + '…</span>'; iaScroll();
+            }
+          } else if (ev.t === 'reset') {
+            acc = ''; bot.innerHTML = '<span class="faint">Pensando…</span>'; iaScroll();
+          } else if (ev.t === 'error') {
+            errored = true;
+            var d = ev.detail ? (function () { try { var j = JSON.parse(ev.detail); return (j.error && j.error.message) || ev.detail; } catch (_) { return ev.detail; } })() : '';
+            bot.innerHTML = '<span class="neg">' + iaEscape(ev.v || 'Error del asesor.') + '</span>' +
+              (d ? '<div class="faint" style="font-size:.72rem;margin-top:4px">' + iaEscape(String(d).slice(0, 300)) + '</div>' : '');
+          }
+        }
         function pump() {
           return reader.read().then(function (res) {
             if (res.done) {
-              iaFinalizeBot(bot, acc); iaHist.push({ role: 'assistant', content: acc });
-              iaBusy = false; $id('iaSendBtn').disabled = false; iaRefreshConsumo(); return;
+              if (errored) { iaHist.pop(); }
+              else { iaFinalizeBot(bot, acc); iaHist.push({ role: 'assistant', content: acc }); }
+              finish(); iaRefreshConsumo();
+              if (perfilTouched || !iaPerfilOpen) iaLoadPerfil(); // no pisar ediciones no guardadas del form abierto
+              iaLoadRecos(); return;
             }
-            acc += dec.decode(res.value, { stream: true });
-            bot.innerHTML = iaEscape(acc).replace(/\n/g, '<br>'); iaScroll();
+            buf += dec.decode(res.value, { stream: true });
+            var nl;
+            while ((nl = buf.indexOf('\n')) >= 0) {
+              var line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+              if (line) { try { handle(JSON.parse(line)); } catch (_) { } }
+            }
             return pump();
           });
         }
@@ -922,9 +1028,15 @@ var App = (function () {
           det = '<div class="faint" style="font-size:.72rem;margin-top:4px">' + iaEscape(String(d).slice(0, 300)) + '</div>';
         }
         bot.innerHTML = '<span class="neg">' + base + '</span>' + det;
-        iaHist.pop(); iaBusy = false; $id('iaSendBtn').disabled = false;
+        iaHist.pop(); finish();
       });
   }
+  var IA_TOOLLBL = {
+    buscar_instrumento: 'Consultando instrumento', ranking_instrumentos: 'Buscando ranking',
+    serie_historica: 'Cargando serie histórica', fondos_money_market: 'Revisando money market',
+    plazo_fijo_top: 'Revisando plazos fijos', guardar_perfil: 'Guardando tu perfil',
+    registrar_recomendacion: 'Registrando recomendación', seguimiento_recomendaciones: 'Revisando recomendaciones'
+  };
   function iaFinalizeBot(bot, text) {
     var charts = [];
     var clean = (text || '').replace(/```chart\s*([\s\S]*?)```/g, function (_m, j) { try { charts.push(JSON.parse(j.trim())); } catch (e) { } return ''; });
@@ -969,7 +1081,7 @@ var App = (function () {
     setTir: setTir, setDeval: setDeval, setMoneda: setMoneda, setTipo: setTipo, setComision: setComision,
     sortMM: sortMM, renderMM: renderMM, setMercado: setMercado, renderMercado: renderMercado,
     iaLogin: iaLogin, iaLogout: iaLogout, iaToggleCartera: iaToggleCartera, iaAddCartera: iaAddCartera,
-    iaDelCartera: iaDelCartera, iaSend: iaSend,
+    iaDelCartera: iaDelCartera, iaSend: iaSend, iaTogglePerfil: iaTogglePerfil, iaSavePerfil: iaSavePerfil,
     setHistKind: setHistKind, drawHistSymbol: drawHistSymbol
   };
 })();

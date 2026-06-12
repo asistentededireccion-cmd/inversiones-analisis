@@ -111,5 +111,44 @@ Deno.serve(async (req) => {
     return json({ ok: true });
   }
 
+  if (action === "perfil_get") {
+    const rows = await sbGet(
+      `ai_perfil?usuario_id=eq.${user.id}&select=monto_disponible,moneda,horizonte,tolerancia,objetivo,notas,updated_at`,
+    );
+    return json({ perfil: rows[0] ?? null });
+  }
+
+  if (action === "perfil_save") {
+    const p = body.perfil ?? {};
+    const ENUMS: Record<string, string[]> = {
+      moneda: ["ARS", "USD"],
+      horizonte: ["corto", "medio", "largo"],
+      tolerancia: ["conservador", "moderado", "agresivo"],
+    };
+    // Merge ESPARSO: solo se tocan las columnas presentes en el payload, para no pisar campos
+    // que el agente haya guardado por su cuenta (p.ej. `notas`, que el form no envía).
+    const row: any = { usuario_id: user.id, updated_at: new Date().toISOString() };
+    if ("monto_disponible" in p) row.monto_disponible = (p.monto_disponible === "" || p.monto_disponible == null) ? null : Number(p.monto_disponible);
+    for (const k of ["moneda", "horizonte", "tolerancia"]) {
+      if (k in p) row[k] = p[k] && ENUMS[k].includes(p[k]) ? p[k] : null;
+    }
+    if ("objetivo" in p) row.objetivo = p.objetivo || null;
+    if ("notas" in p) row.notas = p.notas || null;
+    const r = await fetch(`${REST}/ai_perfil?on_conflict=usuario_id`, {
+      method: "POST", headers: { ...H, Prefer: "resolution=merge-duplicates,return=representation" }, body: JSON.stringify(row),
+    });
+    if (!r.ok) return json({ error: await r.text() }, 400);
+    const ins = await r.json();
+    return json({ perfil: ins[0] ?? row });
+  }
+
+  if (action === "recos_list") {
+    const items = await sbGet(
+      `ai_recomendaciones_seguimiento?usuario_id=eq.${user.id}&order=fecha.desc&limit=50` +
+        `&select=instrumento,tipo,fecha,precio_ref,px_actual,var_desde_reco_pct,horizonte,tesis`,
+    );
+    return json({ items });
+  }
+
   return json({ error: "Acción desconocida." }, 400);
 });
