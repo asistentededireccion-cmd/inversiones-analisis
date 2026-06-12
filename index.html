@@ -138,6 +138,10 @@
       <div class="brand-s">Montagne · Central de decisión</div>
     </div>
     <div class="updated" id="updated"></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:12px">
+      <span id="refreshMsg" class="faint" style="font-size:.72rem;color:rgba(255,255,255,.85)"></span>
+      <button id="btnRefresh" class="ia-btn ghost" style="padding:5px 11px;font-size:.78rem;white-space:nowrap" onclick="App.refreshDatos()" title="Vuelve a obtener los datos de mercado desde las fuentes (útil si una carga vino incompleta)">🔄 Actualizar datos</button>
+    </div>
   </div>
 </header>
 
@@ -439,6 +443,52 @@ var App = (function () {
     if (!inited[id]) { inited[id] = true; initTab(id); }
   }
   function route() { showTab((location.hash || '#resumen').slice(1)); }
+
+  // ================= REFRESH DE DATOS (on-demand) =================
+  var refreshing = false;
+  function fmtFreshness(f) {
+    if (!f || !f.mercado || !f.mercado.length) return '';
+    var lbl = { accion: 'Acciones', cedear: 'CEDEARs', bono: 'Bonos', letra: 'Letras' };
+    var parts = f.mercado.map(function (m) { return (lbl[m.tipo] || m.tipo) + ' ' + m.symbols; });
+    var fecha = f.mercado[0] && f.mercado[0].fecha ? ddmmaa(f.mercado[0].fecha) : '';
+    return parts.join(' · ') + (fecha ? ' (' + fecha + ')' : '');
+  }
+  function loadFreshness() {
+    sb('rpc/mercado_freshness').then(function (f) {
+      if (f && $id('refreshMsg')) $id('refreshMsg').textContent = fmtFreshness(f);
+    }).catch(function () { });
+  }
+  function refreshDatos() {
+    if (refreshing) return;
+    refreshing = true;
+    var btn = $id('btnRefresh'), msg = $id('refreshMsg');
+    var oldTxt = btn.textContent; btn.disabled = true; btn.textContent = '⏳ Actualizando…';
+    msg.textContent = 'Obteniendo datos del mercado… (puede tardar ~30s)';
+    function done() { btn.disabled = false; btn.textContent = oldTxt; refreshing = false; }
+    fetch(FN + 'refresh-mercado', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: ANON, Authorization: 'Bearer ' + ANON }, body: '{}' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.started) {
+          msg.textContent = (d && d.motivo === 'reciente' ? 'Datos recién actualizados · ' : '') + fmtFreshness(d && d.freshness);
+          done(); return;
+        }
+        var before = d.before, tries = 0;
+        (function poll() {
+          if (++tries > 25) { // ~75s
+            msg.textContent = 'Está tardando más de lo normal. Recargá la página en un momento.'; done(); return;
+          }
+          setTimeout(function () {
+            sb('rpc/mercado_freshness').then(function (f) {
+              if (f && f.ultima_captura && f.ultima_captura !== before) {
+                msg.textContent = '✓ Datos actualizados · ' + fmtFreshness(f) + ' — recargando…';
+                setTimeout(function () { location.reload(); }, 1500);
+              } else { poll(); }
+            }).catch(function () { poll(); });
+          }, 3000);
+        })();
+      })
+      .catch(function () { msg.textContent = 'No se pudo actualizar. Reintentá en unos segundos.'; done(); });
+  }
 
   function initTab(id) {
     if (id === 'resumen') initResumen();
@@ -1076,13 +1126,14 @@ var App = (function () {
     if (ta) ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); iaSend(); } });
   })();
   route();
+  loadFreshness();
 
   return {
     setTir: setTir, setDeval: setDeval, setMoneda: setMoneda, setTipo: setTipo, setComision: setComision,
     sortMM: sortMM, renderMM: renderMM, setMercado: setMercado, renderMercado: renderMercado,
     iaLogin: iaLogin, iaLogout: iaLogout, iaToggleCartera: iaToggleCartera, iaAddCartera: iaAddCartera,
     iaDelCartera: iaDelCartera, iaSend: iaSend, iaTogglePerfil: iaTogglePerfil, iaSavePerfil: iaSavePerfil,
-    setHistKind: setHistKind, drawHistSymbol: drawHistSymbol
+    setHistKind: setHistKind, drawHistSymbol: drawHistSymbol, refreshDatos: refreshDatos
   };
 })();
 </script>
